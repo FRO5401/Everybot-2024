@@ -10,9 +10,9 @@ import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
-import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -33,10 +33,10 @@ public class Robot extends TimedRobot {
    * Change kBrushed to kBrushless if you are uisng NEOs.
    * The rookie kit comes with CIMs which are brushed motors.
    * Use the appropriate other class if you are using different controllers */
-  CANSparkBase leftRear = new CANSparkMax(1, MotorType.kBrushed);
-  CANSparkBase leftFront = new CANSparkMax(2, MotorType.kBrushed);
-  CANSparkBase rightRear = new CANSparkMax(3, MotorType.kBrushed);
-  CANSparkBase rightFront = new CANSparkMax(4, MotorType.kBrushed);
+  CANSparkBase leftRear = new CANSparkMax(2, MotorType.kBrushed);
+  CANSparkBase leftFront = new CANSparkMax(1, MotorType.kBrushed);
+  CANSparkBase rightRear = new CANSparkMax(4, MotorType.kBrushed);
+  CANSparkBase rightFront = new CANSparkMax(3, MotorType.kBrushed);
 
   /*A class provided to control your drivetrain. Different drive styles can be passed to differential drive:
    * https://github.com/wpilibsuite/allwpilib/blob/main/wpilibj/src/main/java/edu/wpi/first/wpilibj/drive/DifferentialDrive.java*/
@@ -63,10 +63,8 @@ public class Robot extends TimedRobot {
    * when pressed down
 
    * Buttons index from 0*/
-  Joystick m_driverController = new Joystick(0);
-
-
-  Joystick m_manipController = new Joystick(1);
+  XboxController m_driverController = new XboxController(0);
+  XboxController m_manipController = new XboxController(1);
 
 
   // --------------- Magic numbers. Use these to adjust settings. ---------------
@@ -135,16 +133,16 @@ public class Robot extends TimedRobot {
     m_launchWheel.setSmartCurrentLimit(LAUNCHER_CURRENT_LIMIT_A);
 
     /* Inverting and current limiting for roller claw and climber */
-    /*m_rollerClaw.setInverted(false);
-    m_climber.setInverted(false);
+    m_rollerClaw.setInverted(false);
+    //m_climber.setInverted(false);
 
     m_rollerClaw.setSmartCurrentLimit(60);
-    m_climber.setSmartCurrentLimit(60); */
+    //m_climber.setSmartCurrentLimit(60); 
 
     /* Motors can be set to idle in brake or coast mode. 
      * Brake mode is best for these mechanisms */
-    /*m_rollerClaw.setIdleMode(IdleMode.kBrake);
-    m_climber.setIdleMode(IdleMode.kBrake);*/
+    m_rollerClaw.setIdleMode(IdleMode.kBrake);
+    //m_climber.setIdleMode(IdleMode.kBrake);
   }
 
   /**
