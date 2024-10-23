@@ -10,7 +10,7 @@ import frc.robot.Subsystems.Shooter;
 
 public class FeedAmp extends Command {
   Shooter shooter;
-  boolean endCommand;
+  boolean endCommand = false;
   /** Creates a new SpeakerShot. */
   public FeedAmp(Shooter m_shooter) {
     shooter = m_shooter;
@@ -21,7 +21,7 @@ public class FeedAmp extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    endCommand = false;
+    
   }
 
   // Called every time the scheduler runs while the command is scheduled.

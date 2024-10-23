@@ -9,7 +9,11 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Commands.AmpShot;
 import frc.robot.Commands.AutoSpeakerShot;
+import frc.robot.Commands.FeedAmp;
+import frc.robot.Commands.FeedSpeaker;
 import frc.robot.Commands.IntakeNote;
+import frc.robot.Commands.SpeakerShot;
+import frc.robot.Commands.StopAll;
 import frc.robot.Commands.XboxMove;
 import frc.robot.Subsystems.Drivebase;
 import frc.robot.Subsystems.Shooter;
@@ -28,8 +32,11 @@ public class RobotContainer {
 
   private void configureBindings() {
     operator.leftBumper().whileTrue(new IntakeNote(shooter));
-    operator.rightBumper().whileTrue(new AutoSpeakerShot(shooter));
+    operator.rightBumper().whileTrue(new SpeakerShot(shooter));
+    operator.rightBumper().whileTrue(new FeedSpeaker(shooter));
     operator.b().whileTrue(new AmpShot(shooter));
+    operator.a().whileTrue(new FeedAmp(shooter));
+    operator.start().whileTrue(new StopAll(shooter));
   }
 
   public Command getAutonomousCommand() {

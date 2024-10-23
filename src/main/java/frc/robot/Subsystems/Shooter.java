@@ -42,6 +42,11 @@ public class Shooter extends SubsystemBase {
   public void feed(double feedSpeed){
     launchMotor.set(feedSpeed);
   }
+  public void stop(){
+    launchMotor.set(0);
+    feederMotor.set(0);
+    
+  }
 
 
   public void intake(){

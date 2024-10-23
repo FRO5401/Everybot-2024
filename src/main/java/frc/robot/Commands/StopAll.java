@@ -8,11 +8,11 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.Subsystems.Shooter;
 
-public class FeedSpeaker extends Command {
+public class StopAll extends Command {
   Shooter shooter;
-  boolean endCommand = false;
+  boolean endCommand;
   /** Creates a new SpeakerShot. */
-  public FeedSpeaker(Shooter m_shooter) {
+  public StopAll(Shooter m_shooter) {
     shooter = m_shooter;
     // Use addRequirements() here to declare subsystem dependencies.
     addRequirements(shooter);
@@ -21,13 +21,13 @@ public class FeedSpeaker extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    
+    endCommand = false;
   }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    shooter.feed(ShooterConstants.FEED_OUT_SPEED);
+    shooter.stop();
     endCommand = true;
   }
 

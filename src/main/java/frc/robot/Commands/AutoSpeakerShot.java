@@ -20,10 +20,8 @@ public class AutoSpeakerShot extends SequentialCommandGroup {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
     addCommands(
-      new SpeakerShot(shooter),
+      new SpeakerShot(shooter), 
 
-      new WaitCommand(.5), 
-      
       new FeedSpeaker(shooter)
     );
   }
