@@ -1,0 +1,38 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
+package frc.robot;
+
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.Commands.AmpShot;
+import frc.robot.Commands.AutoSpeakerShot;
+import frc.robot.Commands.IntakeNote;
+import frc.robot.Commands.XboxMove;
+import frc.robot.Subsystems.Drivebase;
+import frc.robot.Subsystems.Shooter;
+
+public class RobotContainer {
+  CommandXboxController driver = Controls.driver;
+  CommandXboxController operator = Controls.operator;
+
+  Shooter shooter = new Shooter();
+  Drivebase drivebase = new Drivebase();
+
+  public RobotContainer() {
+    drivebase.setDefaultCommand(new XboxMove(drivebase));
+    configureBindings();
+  }
+
+  private void configureBindings() {
+    operator.leftBumper().whileTrue(new IntakeNote(shooter));
+    operator.rightBumper().whileTrue(new AutoSpeakerShot(shooter));
+    operator.b().whileTrue(new AmpShot(shooter));
+  }
+
+  public Command getAutonomousCommand() {
+    return Commands.print("No autonomous command configured");
+  }
+}
