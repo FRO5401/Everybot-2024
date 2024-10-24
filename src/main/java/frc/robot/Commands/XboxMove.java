@@ -37,8 +37,8 @@ public class XboxMove extends Command {
     XboxController driver = Controls.xbox_driver;
 
     //getting inputs
-    double throttle = driver.getRightTriggerAxis();
-    double reverse = negPower * driver.getLeftTriggerAxis();
+    double throttle = driver.getLeftTriggerAxis();
+    double reverse = negPower * driver.getRightTriggerAxis();
     boolean pirouette = driver.getLeftStickButton();
     boolean precision = driver.getRightBumper();
     boolean stop = driver.getLeftBumper();
@@ -55,7 +55,7 @@ public class XboxMove extends Command {
 
     // calculating power + gettnig turn
     double power = (throttle + reverse) * percent;
-    double turn = driver.getLeftX() * percent;
+    double turn = -driver.getLeftX() * percent;
 
     // moving forward
     if (throttle >= sensitivity && Math.abs(reverse) <= sensitivity){
@@ -71,7 +71,7 @@ public class XboxMove extends Command {
     }
 
     //pirouetting
-    double pirouetteTurn = Math.abs(turn);
+    double pirouetteTurn = -Math.abs(turn);
     if (pirouette){
       // turning left
       if (turn <= (negPower * sensitivity)){
