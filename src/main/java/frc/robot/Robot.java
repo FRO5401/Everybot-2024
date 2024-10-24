@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 // Imports that allow the usage of REV Spark Max motor controllers
 import com.revrobotics.CANSparkBase;
 import com.revrobotics.CANSparkBase.IdleMode;
@@ -16,6 +17,8 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 
 
 public class Robot extends TimedRobot {
@@ -54,7 +57,7 @@ public class Robot extends TimedRobot {
     /*        CLIMBER CODE BUT COMMENTED OUT CUZ THERE IS NO CLIMBER ON OUR ROBOT  */
   /* Climber motor controller instance. In the stock Everybot configuration a
    * NEO is used, replace with kBrushed if using a brushed motor. */
-  //CANSparkBase m_climber = new CANSparkMax(7, MotorType.kBrushless);
+  CANSparkBase m_climber = new CANSparkMax(7, MotorType.kBrushless);
   
   
   /* The starter code uses the most generic joystick class.
@@ -93,7 +96,7 @@ public class Robot extends TimedRobot {
   //Percent output to help retain notes in the claw
   static final double CLAW_STALL_POWER = .1;
   //Percent output to power the climber
-  //static final double CLIMER_OUTPUT_POWER = 1;
+  static final double CLIMER_OUTPUT_POWER = 1;
 
   // This function is run when the robot is first started up and should be used for any initialization code.
   @Override
@@ -134,15 +137,15 @@ public class Robot extends TimedRobot {
 
     /* Inverting and current limiting for roller claw and climber */
     m_rollerClaw.setInverted(false);
-    //m_climber.setInverted(false);
+    m_climber.setInverted(false);
 
     m_rollerClaw.setSmartCurrentLimit(60);
-    //m_climber.setSmartCurrentLimit(60); 
+    m_climber.setSmartCurrentLimit(60); 
 
     /* Motors can be set to idle in brake or coast mode. 
      * Brake mode is best for these mechanisms */
     m_rollerClaw.setIdleMode(IdleMode.kBrake);
-    //m_climber.setIdleMode(IdleMode.kBrake);
+    m_climber.setIdleMode(IdleMode.kBrake);
   }
 
   /**
@@ -178,6 +181,10 @@ public class Robot extends TimedRobot {
     leftFront.setIdleMode(IdleMode.kBrake);
     rightRear.setIdleMode(IdleMode.kBrake);
     rightFront.setIdleMode(IdleMode.kBrake);
+
+    m_rollerClaw.setIdleMode(IdleMode.kBrake);
+    m_feedWheel.setIdleMode(IdleMode.kBrake);
+    m_launchWheel.setIdleMode(IdleMode.kBrake);
 
     AUTO_LAUNCH_DELAY_S = 2;
     AUTO_DRIVE_DELAY_S = 3;
@@ -248,42 +255,45 @@ public class Robot extends TimedRobot {
      * Coast doesn't apply any brake and allows the motor to spin down naturally with the robot's momentum.
      * (touch the leads of a motor together and then spin the shaft with your fingers to feel the difference)
      * This setting is driver preference. Try setting the idle modes below to kBrake to see the difference. */
-    leftRear.setIdleMode(IdleMode.kCoast);
-    leftFront.setIdleMode(IdleMode.kCoast);
-    rightRear.setIdleMode(IdleMode.kCoast);
-    rightFront.setIdleMode(IdleMode.kCoast);
+    leftRear.setIdleMode(IdleMode.kBrake);
+    leftFront.setIdleMode(IdleMode.kBrake);
+    rightRear.setIdleMode(IdleMode.kBrake);
+    rightFront.setIdleMode(IdleMode.kBrake);
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
 
-    /* Spins up the launcher wheel*/
-    if (m_manipController.getRawButton(1)) {
-      m_launchWheel.set(LAUNCHER_SPEED);
-    }
-    else if(m_manipController.getRawButtonReleased(1))
-    {
-      m_launchWheel.set(0);
-    }
-
-    /* Spins feeder wheel, wait for launch wheel to spin up to full speed for best results */
-    if (m_manipController.getRawButton(6))
-    {
-      m_feedWheel.set(FEEDER_OUT_SPEED);
-    }
-    else if(m_manipController.getRawButtonReleased(6))
-    {
-      m_feedWheel.set(0);
-    }
-
     /* While the button is being held spin both motors to intake note */
-    if(m_manipController.getRawButton(5))
+    if(m_manipController.getLeftBumperPressed())
     {
       m_launchWheel.set(-LAUNCHER_SPEED);
       m_feedWheel.set(FEEDER_IN_SPEED);
     }
-    else if(m_manipController.getRawButtonReleased(5))
+    else if(m_manipController.getLeftBumperReleased())
+    {
+      m_launchWheel.set(0);
+      m_feedWheel.set(0);
+    }
+
+    /* Spins feeder wheel, wait for launch wheel to spin up to full speed for best results */
+    if (m_manipController.getRightBumperPressed())
+    {
+      new Thread(){
+        public void run(){
+        m_launchWheel.set(LAUNCHER_SPEED);
+          try {
+            Thread.sleep(300, 50);
+          } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+          }
+        m_feedWheel.set(FEEDER_OUT_SPEED);
+        }
+          }.start();
+    }
+    else if(m_manipController.getRightBumperReleased())
     {
       m_launchWheel.set(0);
       m_feedWheel.set(0);
@@ -292,12 +302,12 @@ public class Robot extends TimedRobot {
     /* While the amp button is being held, spin both motors to "spit" the note out at a lower speed into the amp
      * (this may take some driver practice to get working reliably)*/
 
-    if(m_manipController.getRawButton(2))
+    if(m_manipController.getBButtonPressed())
     {
       m_feedWheel.set(FEEDER_AMP_SPEED);
       m_launchWheel.set(LAUNCHER_AMP_SPEED);
     }
-    else if(m_manipController.getRawButtonReleased(2))
+    else if(m_manipController.getBButtonReleased())
     {
       m_feedWheel.set(0);
       m_launchWheel.set(0);
@@ -306,21 +316,35 @@ public class Robot extends TimedRobot {
     /* Hold one of the two buttons to either intake or exjest note from roller claw
      * One button is positive claw power and the other is negative
      * It may be best to have the roller claw passively on throughout the match to better retain notes but we did not test this */ 
-    if(m_manipController.getRawButton(3))
+    if(m_manipController.getXButtonPressed())
     {
       m_rollerClaw.set(CLAW_OUTPUT_POWER);
     }
-    else if(m_manipController.getRawButton(4))
+    else if(m_manipController.getYButtonPressed())
     {
       m_rollerClaw.set(-CLAW_OUTPUT_POWER);
     }
-    else
+    else if (m_manipController.getXButtonReleased() && m_manipController.getYButtonReleased())
     {
       m_rollerClaw.set(0);
     }
 
+    /* Spins up the launcher wheel*/
+    if (m_manipController.getAButtonPressed()) {
+      m_rollerClaw.set(0);
+    }
+
+
+    
+
     /* POV is the D-PAD (directional pad) on your controller, 0 == UP and 180 == DOWN
-     * After a match re-enable your robot and unspool the climb 
+     * After a match re-enable your robot and unspool the climb */
+    //double climberSpeed = m_manipController.getLeftY();
+    /*
+    if(m_manipController.getLeftY() > .2 || m_manipController.getLeftY() < -.2){
+      m_climber.set(climberSpeed);
+    }*/
+    
     if(m_manipController.getPOV() == 0)
     {
       m_climber.set(1);
@@ -332,7 +356,7 @@ public class Robot extends TimedRobot {
     else
     {
       m_climber.set(0);
-    }*/
+    }
   
     /* Negative signs are here because the values from the analog sticks are backwards
      * from what we want. Pushing the stick forward returns a negative when we want a
