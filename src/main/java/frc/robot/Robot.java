@@ -3,7 +3,7 @@
 // the WPILib BSD license file in the root directory of this project.
 
 package frc.robot;
-
+// TODO add limit switches, change controls, change drive mode to tank 
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 // Imports that allow the usage of REV Spark Max motor controllers
 import com.revrobotics.CANSparkBase;
@@ -11,6 +11,7 @@ import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
@@ -54,11 +55,12 @@ public class Robot extends TimedRobot {
   /*Roller Claw motor controller instance. */
   CANSparkBase m_rollerClaw = new CANSparkMax(8, MotorType.kBrushed);
   
-    /*        CLIMBER CODE BUT COMMENTED OUT CUZ THERE IS NO CLIMBER ON OUR ROBOT  */
   /* Climber motor controller instance. In the stock Everybot configuration a
    * NEO is used, replace with kBrushed if using a brushed motor. */
   CANSparkBase m_climber = new CANSparkMax(7, MotorType.kBrushless);
-  
+  //Limit switch for the climber
+  //TODO get limit switch id
+  private DigitalInput limitSwitch = new DigitalInput(0);
   
   /* The starter code uses the most generic joystick class.
    * To determine which button on your controller corresponds to which number, open the FRC
@@ -264,21 +266,24 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
+    double deadzone = 0.05;
 
     /* While the button is being held spin both motors to intake note */
-    if(m_manipController.getLeftBumperPressed())
+    double leftTrigger = m_manipController.getLeftTriggerAxis();
+    if(leftTrigger > deadzone)
     {
       m_launchWheel.set(-LAUNCHER_SPEED);
       m_feedWheel.set(FEEDER_IN_SPEED);
     }
-    else if(m_manipController.getLeftBumperReleased())
+    else if(leftTrigger <= deadzone && leftTrigger >= 0)
     {
       m_launchWheel.set(0);
       m_feedWheel.set(0);
     }
 
     /* Spins feeder wheel, wait for launch wheel to spin up to full speed for best results */
-    if (m_manipController.getRightBumperPressed())
+    double rightTrigger = m_manipController.getRightTriggerAxis();
+    if (rightTrigger > deadzone)
     {
       new Thread(){
         public void run(){
@@ -293,21 +298,30 @@ public class Robot extends TimedRobot {
         }
           }.start();
     }
-    else if(m_manipController.getRightBumperReleased())
+    else if(rightTrigger <= deadzone && rightTrigger >= 0)
     {
       m_launchWheel.set(0);
       m_feedWheel.set(0);
     }
 
+    // Turns off all operater motors
+    if(m_manipController.getLeftBumperPressed())
+    {
+      m_feedWheel.set(0);
+      m_launchWheel.set(0);
+      m_rollerClaw.set(0);
+      m_climber.set(0);
+    }
+
     /* While the amp button is being held, spin both motors to "spit" the note out at a lower speed into the amp
      * (this may take some driver practice to get working reliably)*/
 
-    if(m_manipController.getBButtonPressed())
+    if(m_manipController.getRightBumperPressed())
     {
       m_feedWheel.set(FEEDER_AMP_SPEED);
       m_launchWheel.set(LAUNCHER_AMP_SPEED);
     }
-    else if(m_manipController.getBButtonReleased())
+    else if(m_manipController.getRightBumperReleased())
     {
       m_feedWheel.set(0);
       m_launchWheel.set(0);
@@ -316,36 +330,37 @@ public class Robot extends TimedRobot {
     /* Hold one of the two buttons to either intake or exjest note from roller claw
      * One button is positive claw power and the other is negative
      * It may be best to have the roller claw passively on throughout the match to better retain notes but we did not test this */ 
-    if(m_manipController.getXButtonPressed())
+    if(m_manipController.getYButtonPressed())
     {
       m_rollerClaw.set(CLAW_OUTPUT_POWER);
     }
-    else if(m_manipController.getYButtonPressed())
+    else if(m_manipController.getAButtonPressed())
     {
       m_rollerClaw.set(-CLAW_OUTPUT_POWER);
     }
-    else if (m_manipController.getXButtonReleased() && m_manipController.getYButtonReleased())
+    else if (m_manipController.getYButtonReleased() && m_manipController.getAButtonReleased())
     {
       m_rollerClaw.set(0);
     }
-
-    /* Spins up the launcher wheel*/
-    if (m_manipController.getAButtonPressed()) {
-      m_rollerClaw.set(0);
-    }
-
-
-    
-
+  
     /* POV is the D-PAD (directional pad) on your controller, 0 == UP and 180 == DOWN
      * After a match re-enable your robot and unspool the climb */
     //double climberSpeed = m_manipController.getLeftY();
-    /*
-    if(m_manipController.getLeftY() > .2 || m_manipController.getLeftY() < -.2){
-      m_climber.set(climberSpeed);
-    }*/
     
-    if(m_manipController.getPOV() == 0)
+    // TODO Test climber limit switch code
+
+    double speed = m_manipController.getLeftY();
+    if (speed > deadzone || speed < -deadzone){
+      if (speed > 0 && !limitSwitch.get()){
+        m_climber.set(0);
+      }else {
+        m_climber.set(speed);
+      }
+    } else {
+      m_climber.set(0);
+    }
+    
+    /*if(m_manipController.getPOV() == 0)
     {
       m_climber.set(1);
     }
@@ -356,50 +371,67 @@ public class Robot extends TimedRobot {
     else
     {
       m_climber.set(0);
+    }*/
+      
+    //m_drivetrain.arcadeDrive(-m_driverController.getRawAxis(1), -m_driverController.getRawAxis(4), false);
+    
+    /* TODO      DRIVEBASE CODE     */
+
+    //getting inputs
+    double throttle = m_driverController.getRightTriggerAxis();
+    double reverse = -1 * m_driverController.getLeftTriggerAxis();
+    boolean pirouette = m_driverController.getLeftStickButton();
+    boolean precision = m_driverController.getRightBumper();
+    boolean stop = m_driverController.getLeftBumper();
+
+    // if stopped
+    double percent = 1;
+    if (stop){
+      percent = 0;
     }
-  
-    /* Negative signs are here because the values from the analog sticks are backwards
-     * from what we want. Pushing the stick forward returns a negative when we want a
-     * positive value sent to the wheels.
-     *
-     * If you want to change the joystick axis used, open the driver station, go to the
-     * USB tab, and push the sticks determine their axis numbers
-     *
-     * This was setup with a logitech controller, note there is a switch on the back of the
-     * controller that changes how it functions */
-    m_drivetrain.arcadeDrive(-m_driverController.getRawAxis(1), -m_driverController.getRawAxis(4), false);
+    // if precision is pressed
+    if (precision){
+      percent = 0.3;
+    }
+
+    // calculating power + gettnig turn
+    double power = (throttle + reverse) * percent;
+    double turn = m_driverController.getLeftX() * percent;
+
+    // moving forward
+    if (throttle >= deadzone && Math.abs(reverse) <= deadzone){
+      leftFront.set(power*(1+turn));
+      rightFront.set(power*(1-turn));
+    }
+    // moving backward
+    else if (throttle <= deadzone && Math.abs(reverse) >= deadzone){
+      leftFront.set(power*(1+turn));
+      rightFront.set(power*(1-turn));
+    }
+    // no movement
+    else {
+        leftFront.set(0);
+        rightFront.set(0);
+    }
+    //pirouetting
+    double pirouetteTurn = Math.abs(turn);
+    if (pirouette){
+      // turning left
+      if (turn <= (-1 * deadzone)){
+        leftFront.set(-1 * pirouetteTurn);
+        rightFront.set(pirouetteTurn);
+      }
+      // turning right
+      else if (turn >= deadzone){
+        leftFront.set(pirouetteTurn);
+        rightFront.set(-1 * pirouetteTurn);
+      }
+      // no movement
+      else{
+        leftFront.set(0);
+        rightFront.set(0);
+      }
+    }
+
   }
 }
-
-/*
- * The kit of parts drivetrain is known as differential drive, tank drive or skid-steer drive.
- *
- * There are two common ways to control this drivetrain: Arcade and Tank
- *
- * Arcade allows one stick to be pressed forward/backwards to power both sides of the drivetrain to move straight forwards/backwards.
- * A second stick (or the second axis of the same stick) can be pushed left/right to turn the robot in place.
- * When one stick is pushed forward and the other is pushed to the side, the robot will power the drivetrain
- * such that it both moves fowards and turns, turning in an arch.
- *
- * Tank drive allows a single stick to control of a single side of the robot.
- * Push the left stick forward to power the left side of the drive train, causing the robot to spin around to the right.
- * Push the right stick to power the motors on the right side.
- * Push both at equal distances to drive forwards/backwards and use at different speeds to turn in different arcs.
- * Push both sticks in opposite directions to spin in place.
- *
- * arcardeDrive can be replaced with tankDrive like so:
- *
- * m_drivetrain.tankDrive(-m_driverController.getRawAxis(1), -m_driverController.getRawAxis(5))
- *
- * Inputs can be squared which decreases the sensitivity of small drive inputs.
- *
- * It literally just takes (your inputs * your inputs), so a 50% (0.5) input from the controller becomes (0.5 * 0.5) -> 0.25
- *
- * This is an option that can be passed into arcade or tank drive:
- * arcadeDrive(double xSpeed, double zRotation, boolean squareInputs)
- *
- *
- * For more information see:
- * https://docs.wpilib.org/en/stable/docs/software/hardware-apis/motors/wpi-drive-classes.html
- *
- * https://github.com/wpilibsuite/allwpilib/blob/main/wpilibj/src/main/java/edu/wpi/first/wpilibj/drive/DifferentialDrive.java */
