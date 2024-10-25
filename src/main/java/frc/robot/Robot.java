@@ -3,13 +3,10 @@
 // the WPILib BSD license file in the root directory of this project.
 
 package frc.robot;
-// TODO add limit switches, change controls, change drive mode to tank 
-import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 // Imports that allow the usage of REV Spark Max motor controllers
-import com.revrobotics.CANSparkBase;
-import com.revrobotics.CANSparkBase.IdleMode;
-import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkBase.IdleMode;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -18,8 +15,6 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
-import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 
 
 public class Robot extends TimedRobot {
@@ -28,6 +23,7 @@ public class Robot extends TimedRobot {
   private static final String kLaunchAndDrive = "launch drive";
   private static final String kLaunch = "launch";
   private static final String kDrive = "drive";
+  private static final String kTest = "test";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
@@ -37,10 +33,10 @@ public class Robot extends TimedRobot {
    * Change kBrushed to kBrushless if you are uisng NEOs.
    * The rookie kit comes with CIMs which are brushed motors.
    * Use the appropriate other class if you are using different controllers */
-  CANSparkBase leftRear = new CANSparkMax(2, MotorType.kBrushed);
-  CANSparkBase leftFront = new CANSparkMax(1, MotorType.kBrushed);
-  CANSparkBase rightRear = new CANSparkMax(4, MotorType.kBrushed);
-  CANSparkBase rightFront = new CANSparkMax(3, MotorType.kBrushed);
+  CANSparkMax leftRear = new CANSparkMax(2, MotorType.kBrushed);
+  CANSparkMax leftFront = new CANSparkMax(1, MotorType.kBrushed);
+  CANSparkMax rightRear = new CANSparkMax(4, MotorType.kBrushed);
+  CANSparkMax rightFront = new CANSparkMax(3, MotorType.kBrushed);
 
   /*A class provided to control your drivetrain. Different drive styles can be passed to differential drive:
    * https://github.com/wpilibsuite/allwpilib/blob/main/wpilibj/src/main/java/edu/wpi/first/wpilibj/drive/DifferentialDrive.java*/
@@ -49,17 +45,16 @@ public class Robot extends TimedRobot {
   /*Launcher motor controller instances.
    * Like the drive motors, set the CAN id's to match your robot or use different motor controller classses (VictorSPX) to match your robot as necessary.
    * Both of the motors used on the KitBot launcher are CIMs which are brushed motors */
-  CANSparkBase m_launchWheel = new CANSparkMax(6, MotorType.kBrushed);
-  CANSparkBase m_feedWheel = new CANSparkMax(5, MotorType.kBrushed);
+  CANSparkMax m_launchWheel = new CANSparkMax(6, MotorType.kBrushed);
+  CANSparkMax m_feedWheel = new CANSparkMax(5, MotorType.kBrushed);
 
   /*Roller Claw motor controller instance. */
-  CANSparkBase m_rollerClaw = new CANSparkMax(8, MotorType.kBrushed);
+  CANSparkMax m_rollerClaw = new CANSparkMax(8, MotorType.kBrushed);
   
   /* Climber motor controller instance. In the stock Everybot configuration a
    * NEO is used, replace with kBrushed if using a brushed motor. */
-  CANSparkBase m_climber = new CANSparkMax(7, MotorType.kBrushless);
+  CANSparkMax m_climber = new CANSparkMax(7, MotorType.kBrushless);
   //Limit switch for the climber
-  //TODO get limit switch id
   private DigitalInput limitSwitch = new DigitalInput(0);
   
   /* The starter code uses the most generic joystick class.
@@ -107,6 +102,7 @@ public class Robot extends TimedRobot {
     m_chooser.addOption("launch note and drive", kLaunchAndDrive);
     m_chooser.addOption("launch", kLaunch);
     m_chooser.addOption("drive", kDrive);
+    m_chooser.addOption("test", kTest);
     SmartDashboard.putData("Auto choices", m_chooser);
 
 
@@ -217,7 +213,6 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-
     double timeElapsed = Timer.getFPGATimestamp() - autonomousStartTime;
 
     /* Spins up launcher wheel until time spent in auto is greater than AUTO_LAUNCH_DELAY_S
@@ -225,28 +220,49 @@ public class Robot extends TimedRobot {
      * Drives until time is greater than AUTO_DRIVE_DELAY_S + AUTO_DRIVE_TIME_S
      * Does not move when time is greater than AUTO_DRIVE_DELAY_S + AUTO_DRIVE_TIME_S */
 
-    if(timeElapsed < AUTO_LAUNCH_DELAY_S)
-    {
-      m_launchWheel.set(AUTO_LAUNCHER_SPEED);
-      m_drivetrain.arcadeDrive(0, 0);
-
+    if (m_autoSelected == kTest){
+      if(timeElapsed < 1){
+        m_drivetrain.tankDrive(1, 1);
+      }
+      else if (timeElapsed < 2){
+        m_drivetrain.tankDrive(1, -1);
+      }
+      else if (timeElapsed < 3){
+        m_drivetrain.tankDrive(1, 1);
+      }
+      else if (timeElapsed < 4){
+        m_rollerClaw.set(1);
+      }
+      else if (timeElapsed < 5){
+        m_rollerClaw.set(0);
+        m_drivetrain.tankDrive(-1, -1);
+      }
+      else {
+        m_drivetrain.tankDrive(0, 0);
+      }
     }
-    else if(timeElapsed < AUTO_DRIVE_DELAY_S)
-    {
-      m_feedWheel.set(AUTO_LAUNCHER_SPEED);
-      m_drivetrain.arcadeDrive(0, 0);
+    else{
+      if(timeElapsed < AUTO_LAUNCH_DELAY_S)
+      {
+        m_launchWheel.set(AUTO_LAUNCHER_SPEED);
+        m_drivetrain.arcadeDrive(0, 0);
+      }
+      else if(timeElapsed < AUTO_DRIVE_DELAY_S)
+      {
+        m_feedWheel.set(AUTO_LAUNCHER_SPEED);
+        m_drivetrain.arcadeDrive(0, 0);
+      }
+      else if(timeElapsed < AUTO_DRIVE_DELAY_S + AUTO_DRIVE_TIME_S)
+      {
+        m_launchWheel.set(0);
+        m_feedWheel.set(0);
+        m_drivetrain.arcadeDrive(AUTO_DRIVE_SPEED, 0);
+      }
+      else
+      {
+        m_drivetrain.arcadeDrive(0, 0);
+      }
     }
-    else if(timeElapsed < AUTO_DRIVE_DELAY_S + AUTO_DRIVE_TIME_S)
-    {
-      m_launchWheel.set(0);
-      m_feedWheel.set(0);
-      m_drivetrain.arcadeDrive(AUTO_DRIVE_SPEED, 0);
-    }
-    else
-    {
-      m_drivetrain.arcadeDrive(0, 0);
-    }
-    /* For an explanation on differintial drive, squaredInputs, arcade drive and tank drive see the bottom of this file */
   }
 
   /** This function is called once when teleop is enabled. */
@@ -267,19 +283,6 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     double deadzone = 0.05;
-
-    /* While the button is being held spin both motors to intake note */
-    double leftTrigger = m_manipController.getLeftTriggerAxis();
-    if(leftTrigger > deadzone)
-    {
-      m_launchWheel.set(-LAUNCHER_SPEED);
-      m_feedWheel.set(FEEDER_IN_SPEED);
-    }
-    else if(leftTrigger <= deadzone && leftTrigger >= 0)
-    {
-      m_launchWheel.set(0);
-      m_feedWheel.set(0);
-    }
 
     /* Spins feeder wheel, wait for launch wheel to spin up to full speed for best results */
     double rightTrigger = m_manipController.getRightTriggerAxis();
@@ -313,18 +316,16 @@ public class Robot extends TimedRobot {
       m_climber.set(0);
     }
 
-    /* While the amp button is being held, spin both motors to "spit" the note out at a lower speed into the amp
-     * (this may take some driver practice to get working reliably)*/
-
-    if(m_manipController.getRightBumperPressed())
+    /* While the button is being held spin both motors to intake note */
+    if(m_manipController.getRightBumper())
     {
-      m_feedWheel.set(FEEDER_AMP_SPEED);
-      m_launchWheel.set(LAUNCHER_AMP_SPEED);
+      m_launchWheel.set(-LAUNCHER_SPEED);
+      m_feedWheel.set(FEEDER_IN_SPEED);
     }
     else if(m_manipController.getRightBumperReleased())
     {
-      m_feedWheel.set(0);
       m_launchWheel.set(0);
+      m_feedWheel.set(0);
     }
 
     /* Hold one of the two buttons to either intake or exjest note from roller claw
@@ -347,35 +348,20 @@ public class Robot extends TimedRobot {
      * After a match re-enable your robot and unspool the climb */
     //double climberSpeed = m_manipController.getLeftY();
     
-    // TODO Test climber limit switch code
-
     double speed = m_manipController.getLeftY();
+
     if (speed > deadzone || speed < -deadzone){
       if (speed > 0 && !limitSwitch.get()){
         m_climber.set(0);
       }else {
-        m_climber.set(speed);
+        m_climber.set(-speed);
       }
     } else {
       m_climber.set(0);
-    }
-    
-    /*if(m_manipController.getPOV() == 0)
-    {
-      m_climber.set(1);
-    }
-    else if(m_manipController.getPOV() == 180)
-    {
-      m_climber.set(-1);
-    }
-    else
-    {
-      m_climber.set(0);
-    }*/
-      
+    }      
     //m_drivetrain.arcadeDrive(-m_driverController.getRawAxis(1), -m_driverController.getRawAxis(4), false);
     
-    /* TODO      DRIVEBASE CODE     */
+    /*    DRIVEBASE CODE     */
 
     //getting inputs
     double throttle = m_driverController.getRightTriggerAxis();
